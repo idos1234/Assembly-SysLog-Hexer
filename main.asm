@@ -8,6 +8,7 @@ SECTION .data
 SECTION .bss
     buffer resb BUFFER_SIZE
     file_desc resq 1
+    hex_text resb 8
 
 SECTION .text
     GLOBAL _start
@@ -32,6 +33,7 @@ _start:
     cmp rax, 0
     jl call_exit
 
+    push hex_text
     push rax
     mov rax, buffer
     push rax

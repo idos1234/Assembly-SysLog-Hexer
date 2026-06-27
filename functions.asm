@@ -55,16 +55,19 @@ _write_file_hex:
 
     push rdi
     push rsi
+    push rcx
     push rdx
 
+    mov rdx, [rbp + 20h]
     mov rcx, [rbp + 18h]    ; How many bytes actually read
     mov rsi, [rbp + 10h]    ; Pointer to the buffer containing the text
     _writing_loop:
         xor rax, rax
         mov al, byte [rsi]    ; Get the first char each time
 
+        push rdx
         push rax
-        call _print_char_as_hex
+        call _print_decimal_as_hex
 
         add rsi, 1
         loop _writing_loop
@@ -72,6 +75,7 @@ _write_file_hex:
     
     _stop_writing:
     pop rdx
+    pop rcx
     pop rsi
     pop rdi
 
@@ -94,7 +98,7 @@ _close_file:
 
     retn 8h
 
-_print_char_as_hex:
+_print_decimal_as_hex:
     enter 0, 0
 
     push rbx
@@ -103,33 +107,20 @@ _print_char_as_hex:
     push rsi
     push rdi
 
+    mov rsi, [rbp + 18h]
+    push rsi
     mov rax, [rbp + 10h]
     push rax
-    call _convert_char_to_hex
+    call _convert_decimal_to_hex
 
-    mov rbx, rax
-
-    ; Print the first char
-    push rcx
-    
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, rsp
-    mov rdx, 1
-    syscall
-
-    pop rcx
-
-    ; Print the second char
-    push rbx
+    add rsi, 8
+    sub rsi, rcx
 
     mov rax, SYS_WRITE
     mov rdi, STDOUT
-    mov rsi, rsp
-    mov rdx, 1
-    syscall
+    mov rdx, rcx
+    syscall 
 
-    pop rbx
 
     pop rdi
     pop rsi
@@ -139,35 +130,56 @@ _print_char_as_hex:
 
     leave
 
-    retn 8h
+    retn 10h
 
 
-
-_convert_char_to_hex:
-    enter 0, 0
-
-    ; Get the left number
-    mov rax, [rbp + 10h]
-    shr rax, 4
-
-    push rax
-    call _convert_decimal_to_hex
-
-    mov rcx, rax
-
-    ; Get the right number
-    mov rax, [rbp + 10h]
-    and rax, 0x0F    ; 0x0F in binary is 00001111
-
-    push rax
-    call _convert_decimal_to_hex
-
-    leave
-
-    retn 8h
 
 _convert_decimal_to_hex:
     enter 0, 0
+
+    push rbx
+    push rdx
+    push rsi
+
+    ; Get the number
+    mov rsi, [rbp + 18h]
+    add rsi, 7
+    mov rax, [rbp + 10h]
+    mov rbx, 10h
+    mov rcx, 0
+
+    _convert_decimal_to_hex_loop:
+        xor rdx, rdx
+        div rbx
+
+        push rdx
+        mov rdx, rax
+        call _convert_digit_to_hexChar
+
+        mov byte [rsi], al
+        mov rax, rdx
+        
+        dec rsi
+        inc rcx
+
+        cmp rax, 0
+        jne _convert_decimal_to_hex_loop
+
+
+    pop rsi
+    pop rdx
+    pop rbx
+
+    leave
+
+    retn 10h
+
+_convert_digit_to_hexChar:
+    enter 0, 0
+
+    push rdi
+    push rsi
+    push rdx
 
     ; Get the number
     mov rax, [rbp + 10h]
@@ -186,6 +198,10 @@ _convert_decimal_to_hex:
     _is_digit:
     add rax, '0'
     
+
+    pop rdx
+    pop rsi
+    pop rdi
 
     leave
 
