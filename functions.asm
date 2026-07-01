@@ -57,23 +57,261 @@ _write_file_hex:
     push rsi
     push rcx
     push rdx
+    push rbx
+    push r8
+    push r9
+    push r10
 
-    mov rdx, [rbp + 20h]
-    mov rcx, [rbp + 18h]    ; How many bytes actually read
+    mov rbx, [rbp + 18h]    ; How many bytes actually read
     mov rsi, [rbp + 10h]    ; Pointer to the buffer containing the text
+
+    cmp rbx, 16
+    jbe _write_last_line
+
+    mov r10, 0
+
     _writing_loop:
+        mov rcx, 16
+        
+        ; Print Address
+        mov rdx, 8
+        push rdx
+        mov rdx, [rbp + 20h]
+        push rdx
+        mov rax, r10
+        shl rax, 4 ; Mul by 16
+        push rax
+        call _print_decimal_as_hex
+
+        ;':' + Space
+        push rsi
+        push rcx
+
+        mov rsi, ':'
+        push rsi
+
+        mov rax, SYS_WRITE
+        mov rdi, STDOUT
+        mov rsi, rsp
+        mov rdx, 1
+        syscall
+
+        pop rsi
+
+        mov rax, SYS_WRITE
+        mov rdi, STDOUT
+        mov rsi, [rbp + 30h]
+        mov rdx, 1
+        syscall
+
+        pop rcx
+        pop rsi
+
+        _write_line:
+            xor rax, rax
+            mov al, byte [rsi]    ; Get the first char each time
+
+            mov rdx, 2
+            push rdx
+            mov rdx, [rbp + 20h]
+            push rdx
+            push rax
+            call _print_decimal_as_hex
+
+            add rsi, 1
+
+            mov rax, rcx
+            xor rdx, rdx
+            mov r8, 2
+            div r8
+            cmp rdx, 1
+            je _write_space_1
+            jmp _write_line_looper
+
+            _write_space_1:
+            push rsi
+            push rcx
+
+            mov rax, SYS_WRITE
+            mov rdi, STDOUT
+            mov rsi, [rbp + 30h]
+            mov rdx, 1
+            syscall
+
+            pop rcx
+            pop rsi
+
+            _write_line_looper:
+            loop _write_line
+
+
+        ; Write text
+        push rsi
+        push rcx
+
+        mov rax, 46
+        push rax
+        mov rax, 10
+        push rax
+        sub rsi, 16
+        push rsi
+        call _replace
+
+        mov rsi, rax
+        mov rax, SYS_WRITE
+        mov rdi, STDOUT
+        mov rdx, 16
+        syscall
+
+        pop rcx
+        pop rsi
+
+        push rsi
+
+        mov rax, SYS_WRITE
+        mov rdi, STDOUT
+        mov rsi, [rbp + 28h]
+        mov rdx, 1
+        syscall 
+
+        pop rsi
+        
+        inc r10
+
+        sub rbx, 16
+        cmp rbx, 16
+        jae _writing_loop
+
+
+    mov rcx, rbx
+    mov r9, 0
+
+    ; Print Address
+    mov rdx, 8
+    push rdx
+    mov rdx, [rbp + 20h]
+    push rdx
+    mov rax, r10
+    shl rax, 4 ; Mul by 16
+    push rax
+    call _print_decimal_as_hex
+
+    ;':' + Space
+    push rsi
+    push rcx
+
+    mov rsi, ':'
+    push rsi
+
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, rsp
+    mov rdx, 1
+    syscall
+
+    pop rsi
+
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, [rbp + 30h]
+    mov rdx, 1
+    syscall
+
+    pop rcx
+    pop rsi
+
+    mov r10, rcx
+
+    _write_last_line:
         xor rax, rax
         mov al, byte [rsi]    ; Get the first char each time
 
+        mov rdx, 2
+        push rdx
+        mov rdx, [rbp + 20h]
         push rdx
         push rax
         call _print_decimal_as_hex
 
         add rsi, 1
-        loop _writing_loop
 
-    
-    _stop_writing:
+        mov rax, r9
+        xor rdx, rdx
+        mov r8, 2
+        div r8
+        cmp rdx, 1
+        je _write_space_2
+        jmp _write_last_line_looper
+
+        _write_space_2:
+        push rsi
+        push rcx
+
+        mov rax, SYS_WRITE
+        mov rdi, STDOUT
+        mov rsi, [rbp + 30h]
+        mov rdx, 1
+        syscall
+
+        pop rcx
+        pop rsi
+
+        _write_last_line_looper:
+        inc r9
+        loop _write_last_line
+
+        ; Write spaces
+        mov rcx, r9
+        _space_looper:
+            push rsi
+            push rcx
+
+            mov rax, SYS_WRITE
+            mov rdi, STDOUT
+            mov rsi, [rbp + 30h]
+            mov rdx, 1
+            syscall
+
+            pop rcx
+            pop rsi
+        
+        inc rcx
+        cmp rcx, 18
+        jb _space_looper
+
+        ; Write text
+        push rsi
+        push rcx
+
+        mov rax, 46
+        push rax
+        mov rax, 10
+        push rax
+        sub rsi, r9
+        push rsi
+        call _replace
+
+        mov rsi, rax
+        mov rax, SYS_WRITE
+        mov rdi, STDOUT
+        mov rdx, r9
+        syscall
+
+        pop rcx
+        pop rsi
+
+        ; New line
+        mov rax, SYS_WRITE
+        mov rdi, STDOUT
+        mov rsi, [rbp + 28h]
+        mov rdx, 1
+        syscall
+
+
+    pop r10
+    pop r9
+    pop r8
+    pop rbx
     pop rdx
     pop rcx
     pop rsi
@@ -81,7 +319,7 @@ _write_file_hex:
 
     leave
 
-    retn 10h
+    retn 28h
 
 _close_file:
     enter 0, 0
@@ -107,6 +345,8 @@ _print_decimal_as_hex:
     push rsi
     push rdi
 
+    mov rax, [rbp + 20h]
+    push rax
     mov rsi, [rbp + 18h]
     push rsi
     mov rax, [rbp + 10h]
@@ -130,7 +370,7 @@ _print_decimal_as_hex:
 
     leave
 
-    retn 10h
+    retn 18h
 
 
 
@@ -142,7 +382,7 @@ _convert_decimal_to_hex:
     push rsi
 
     ; Get the number
-    mov rsi, [rbp + 18h]
+    mov rsi, [rbp + 18h] ; Buffer to write the hex in
     add rsi, 7
     mov rax, [rbp + 10h]
     mov rbx, 10h
@@ -161,9 +401,8 @@ _convert_decimal_to_hex:
         
         dec rsi
         inc rcx
-
-        cmp rax, 0
-        jne _convert_decimal_to_hex_loop
+        cmp rcx, [rbp + 20h] ; Compare with the min lenght of the hex
+        jb _convert_decimal_to_hex_loop
 
 
     pop rsi
@@ -172,7 +411,7 @@ _convert_decimal_to_hex:
 
     leave
 
-    retn 10h
+    retn 18h
 
 _convert_digit_to_hexChar:
     enter 0, 0
@@ -206,6 +445,41 @@ _convert_digit_to_hexChar:
     leave
 
     retn 8h
+
+_replace:
+    enter 0, 0
+
+    push rsi
+    push rcx
+
+    mov rsi, [rbp + 10h]
+    mov rcx, 16
+
+    _replace_loop:
+        mov al, byte[rsi]
+
+        cmp al, byte[rbp + 18h]
+        jne skip_replace
+
+        mov al, byte[rbp + 20h]
+        mov byte [rsi], al
+
+
+        skip_replace:
+        inc rsi
+        loop _replace_loop
+
+    sub rsi, 16
+
+    mov rax, rsi
+
+    pop rcx
+    pop rsi
+
+    leave
+
+    retn 18h
+    
     
 
 _exit:

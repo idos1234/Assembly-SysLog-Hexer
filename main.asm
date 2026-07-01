@@ -4,6 +4,8 @@ default rel
 
 SECTION .data
     filename db "file.txt", 0
+    newline db 10, 0
+    space db 32, 0
 
 SECTION .bss
     buffer resb BUFFER_SIZE
@@ -33,6 +35,8 @@ _start:
     cmp rax, 0
     jl call_exit
 
+    push space
+    push newline
     push hex_text
     push rax
     mov rax, buffer
