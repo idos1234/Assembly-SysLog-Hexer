@@ -66,7 +66,7 @@ _write_file_hex:
     mov rsi, [rbp + 10h]    ; Pointer to the buffer containing the text
 
     cmp rbx, 16
-    jbe _write_last_line
+    jbe last_line_section
 
     mov r10, 0
 
@@ -183,6 +183,7 @@ _write_file_hex:
         jae _writing_loop
 
 
+    last_line_section:  
     mov rcx, rbx
     mov r9, 0
 
@@ -261,10 +262,32 @@ _write_file_hex:
         loop _write_last_line
 
         ; Write spaces
-        mov rcx, r9
+        xor rcx, rcx
+
+        ; The formula
+        mov rax, 16
+        sub rax, r9
+        mov rbx, rax
+        shr rax, 1  ; / 2
+        shl rbx, 1  ; * 2
+        add rax, rbx
+
+        ; Check odd or even
+        push rax
+        mov rax, r9
+        mov rbx, 2
+        div rbx
+        pop rax
+
+        cmp rdx, 0
+        je _space_looper
+
+        add rax, 1
+        
         _space_looper:
             push rsi
             push rcx
+            push rax
 
             mov rax, SYS_WRITE
             mov rdi, STDOUT
@@ -272,12 +295,13 @@ _write_file_hex:
             mov rdx, 1
             syscall
 
+            pop rax
             pop rcx
             pop rsi
         
-        inc rcx
-        cmp rcx, 18
-        jb _space_looper
+            inc rcx
+            cmp rcx, rax
+            jb _space_looper
 
         ; Write text
         push rsi
@@ -485,3 +509,5 @@ _replace:
 _exit:
     mov rax, SYS_EXIT
     syscall
+
+    ret
