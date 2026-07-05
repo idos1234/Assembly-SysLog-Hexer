@@ -26,15 +26,6 @@ _start:
     cmp rax, 0
     jl call_exit
 
-    push rax
-    mov rax, buffer
-    push rax
-
-    call _read_file
-
-    cmp rax, 0
-    jl call_exit
-
     push space
     push newline
     push hex_text
@@ -42,7 +33,7 @@ _start:
     mov rax, buffer
     push rax
 
-    call _write_file_hex
+    call _read_and_write
 
     cmp rax, 0
     jl call_exit

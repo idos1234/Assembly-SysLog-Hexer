@@ -29,6 +29,54 @@ _open_file:
 
     retn 8h
 
+
+_read_and_write:
+    enter 0, 0
+
+    push rbx
+    push rdx
+
+    xor rdx, rdx
+    _read_and_write_loop:
+        mov rax, [rbp + 18h]    ; file descriptor
+        push rax
+        mov rax, [rbp + 10h]    ; buffer to store the file
+        push rax
+
+        call _read_file
+
+        cmp rax, 0
+        jle _stop_reading_writing
+
+        mov rbx, rdx    ; How many bytes already read - for the address
+        shr rbx, 4        ; Divide by 16 to get the address
+        push rbx
+        add rdx, rax
+        mov rbx, [rbp + 30h]    ; address of the space buffer
+        push rbx
+        mov rbx, [rbp + 28h]    ; address of the newline buffer
+        push rbx
+        mov rbx, [rbp + 20h]    ; address of the hex_text buffer
+        push rbx
+        push rax
+        mov rax, [rbp + 10h]
+        push rax
+
+        call _write_file_hex
+
+        cmp rax, 0
+        jle _stop_reading_writing
+
+        jmp _read_and_write_loop
+
+    _stop_reading_writing:
+    pop rdx
+    pop rbx
+
+    leave
+
+    retn 30h
+
 _read_file:
     enter 0, 0
 
@@ -68,7 +116,7 @@ _write_file_hex:
     cmp rbx, 16
     jbe last_line_section
 
-    mov r10, 0
+    mov r10, [rbp + 38h]    ; How many bytes already read - for the address
 
     _writing_loop:
         mov rcx, 16
@@ -181,6 +229,9 @@ _write_file_hex:
         sub rbx, 16
         cmp rbx, 16
         jae _writing_loop
+        
+        cmp rbx, 0
+        je _stop_writing
 
 
     last_line_section:  
@@ -332,6 +383,7 @@ _write_file_hex:
         syscall
 
 
+    _stop_writing:
     pop r10
     pop r9
     pop r8
@@ -343,7 +395,7 @@ _write_file_hex:
 
     leave
 
-    retn 28h
+    retn 30h
 
 _close_file:
     enter 0, 0
