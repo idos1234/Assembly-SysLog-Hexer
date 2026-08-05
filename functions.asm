@@ -120,40 +120,13 @@ _write_file_hex:
 
     _writing_loop:
         mov rcx, 16
-        
-        ; Print Address
-        mov rdx, 8
-        push rdx
+
+        push r10
         mov rdx, [rbp + 20h]
         push rdx
-        mov rax, r10
-        shl rax, 4 ; Mul by 16
-        push rax
-        call _print_decimal_as_hex
-
-        ;':' + Space
-        push rsi
-        push rcx
-
-        mov rsi, ':'
-        push rsi
-
-        mov rax, SYS_WRITE
-        mov rdi, STDOUT
-        mov rsi, rsp
-        mov rdx, 1
-        syscall
-
-        pop rsi
-
-        mov rax, SYS_WRITE
-        mov rdi, STDOUT
-        mov rsi, [rbp + 30h]
-        mov rdx, 1
-        syscall
-
-        pop rcx
-        pop rsi
+        mov rdx, [rbp + 30h]
+        push rdx
+        call _print_line_offset
 
         _write_line:
             xor rax, rax
@@ -238,40 +211,13 @@ _write_file_hex:
     mov rcx, rbx
     mov r9, 0
 
-    ; Print Address
-    mov rdx, 8
-    push rdx
+    push r10
     mov rdx, [rbp + 20h]
     push rdx
-    mov rax, r10
-    shl rax, 4 ; Mul by 16
-    push rax
-    call _print_decimal_as_hex
-
-    ;':' + Space
-    push rsi
-    push rcx
-
-    mov rsi, ':'
-    push rsi
-
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, rsp
-    mov rdx, 1
-    syscall
-
-    pop rsi
-
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, [rbp + 30h]
-    mov rdx, 1
-    syscall
-
-    pop rcx
-    pop rsi
-
+    mov rdx, [rbp + 30h]
+    push rdx
+    call _print_line_offset
+    
     mov r10, rcx
 
     _write_last_line:
@@ -396,6 +342,56 @@ _write_file_hex:
     leave
 
     retn 30h
+
+
+_print_line_offset:
+    enter 0, 0
+
+    push rdx
+    push rsi
+    push rcx
+    
+    ; Print Address
+    mov rdx, 8
+    push rdx
+    mov rdx, [rbp + 18h]
+    push rdx
+    mov rax, [rbp + 20h]
+    shl rax, 4 ; Mul by 16
+    push rax
+    call _print_decimal_as_hex
+
+    ;':' + Space
+    push rsi
+    push rcx
+
+    mov rsi, ':'
+    push rsi
+
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, rsp
+    mov rdx, 1
+    syscall
+
+    pop rsi
+
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, [rbp + 10h]
+    mov rdx, 1
+    syscall
+
+    pop rcx
+    pop rsi
+
+    pop rcx
+    pop rsi
+    pop rdx
+
+    leave
+
+    retn 18h
 
 _close_file:
     enter 0, 0
