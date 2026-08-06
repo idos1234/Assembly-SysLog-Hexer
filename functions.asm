@@ -9,25 +9,18 @@
 %define BUFFER_SIZE 1024
 
 _open_file:
-    enter 0, 0
-
-    push rdi
     push rsi
     push rdx
 
     mov rax, SYS_OPEN
-    mov rdi, [rbp + 10h]               ; address of the filename
     mov rsi, 0                      ; O_RDONLY (0) - Read-only mode
     mov rdx, 0                      ; No special permissions needed
     syscall
 
     pop rdx
     pop rsi
-    pop rdi
 
-    leave
-
-    retn 8h
+    ret
 
 
 _read_and_write:
@@ -38,11 +31,8 @@ _read_and_write:
 
     xor rdx, rdx
     _read_and_write_loop:
-        mov rax, [rbp + 18h]    ; file descriptor
-        push rax
-        mov rax, [rbp + 10h]    ; buffer to store the file
-        push rax
-
+        mov rdi, [rbp + 18h]    ; file descriptor
+        mov rsi, [rbp + 10h]    ; buffer to store the file
         call _read_file
 
         cmp rax, 0
@@ -78,25 +68,15 @@ _read_and_write:
     retn 30h
 
 _read_file:
-    enter 0, 0
-
-    push rdi
-    push rsi
     push rdx
 
     mov rax, SYS_READ
-    mov rdi, [rbp + 18h]    ; file descriptor
-    mov rsi, [rbp + 10h]    ; buffer to store the file
     mov rdx, BUFFER_SIZE
     syscall
 
     pop rdx
-    pop rsi
-    pop rdi
 
-    leave
-
-    retn 10h
+    ret
 
 _write_file_hex:
     enter 0, 0
@@ -375,19 +355,10 @@ _print_ascii_sidebar:
     retn 18h
 
 _close_file:
-    enter 0, 0
-
-    push rdi
-
     mov rax, SYS_CLOSE
-    mov rdi, [rbp + 10h]               ; address of the filename
     syscall
 
-    pop rdi
-
-    leave
-
-    retn 8h
+    ret
 
 _print_decimal_as_hex:
     enter 0, 0

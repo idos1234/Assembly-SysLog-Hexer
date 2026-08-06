@@ -16,9 +16,7 @@ SECTION .text
     GLOBAL _start
 
 _start:
-    mov rax, filename
-    push rax
-
+    mov rdi, filename   ; address of the filename
     call _open_file
 
     mov [file_desc], rax
@@ -38,9 +36,7 @@ _start:
     cmp rax, 0
     jl call_exit
 
-    mov rax, file_desc
-    push rax
-    
+    mov rdi, file_desc  ; address of the filename    
     call _close_file
 
 
@@ -51,5 +47,5 @@ _start:
 
 
 call_exit:
-    mov rdi, rax
+    mov rdi, rax    ; return value
     call _exit
