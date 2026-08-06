@@ -372,7 +372,7 @@ _print_ascii_sidebar:
 
     leave
 
-    retn 10h
+    retn 18h
 
 _close_file:
     enter 0, 0
