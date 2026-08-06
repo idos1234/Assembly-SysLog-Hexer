@@ -106,8 +106,6 @@ _write_file_hex:
     push rcx
     push rdx
     push rbx
-    push r8
-    push r9
     push r10
 
     mov rbx, [rbp + 18h]    ; How many bytes actually read
@@ -157,7 +155,6 @@ _write_file_hex:
 
     last_line_section:  
     mov rcx, rbx
-    mov r9, 0
 
     push r10
     mov rdx, [rbp + 20h]
@@ -183,8 +180,6 @@ _write_file_hex:
 
     _stop_writing:
     pop r10
-    pop r9
-    pop r8
     pop rbx
     pop rdx
     pop rcx
@@ -214,9 +209,6 @@ _print_line_offset:
     call _print_decimal_as_hex
 
     ;':' + Space
-    push rsi
-    push rcx
-
     mov rsi, ':'
     push rsi
 
@@ -233,9 +225,6 @@ _print_line_offset:
     mov rsi, [rbp + 10h]
     mov rdx, 1
     syscall
-
-    pop rcx
-    pop rsi
 
     pop rcx
     pop rsi
