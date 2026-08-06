@@ -415,12 +415,12 @@ _convert_decimal_to_hex:
         xor rdx, rdx
         div rbx
 
-        push rdx
-        mov rdx, rax
+        push rax
+        mov rax, rdx
         call _convert_digit_to_hexChar
 
         mov byte [rsi], al
-        mov rax, rdx
+        pop rax
         
         dec rsi
         inc rcx
@@ -437,15 +437,6 @@ _convert_decimal_to_hex:
     retn 18h
 
 _convert_digit_to_hexChar:
-    enter 0, 0
-
-    push rdi
-    push rsi
-    push rdx
-
-    ; Get the number
-    mov rax, [rbp + 10h]
-
     cmp rax, 9
     jbe _is_digit
 
@@ -453,21 +444,12 @@ _convert_digit_to_hexChar:
     sub rax, 10
     add rax, 'a'
 
-    leave
-
-    retn 8h
+    ret
 
     _is_digit:
     add rax, '0'
-    
 
-    pop rdx
-    pop rsi
-    pop rdi
-
-    leave
-
-    retn 8h
+    ret
 
 _replace:
     push rcx
