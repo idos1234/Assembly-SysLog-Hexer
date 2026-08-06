@@ -324,14 +324,12 @@ _print_ascii_sidebar:
     enter 0, 0
     push rsi
     push rcx
+    push rbx
 
     ; Write text
-    mov rax, 46
-    push rax
-    mov rax, 10
-    push rax
-    mov rsi, [rbp + 10h]
-    push rsi
+    mov bh, 10  ;from
+    mov bl, 46  ;to
+    mov rsi, [rbp + 10h]    ;text buffer
     call _replace
 
     mov rsi, rax
@@ -347,6 +345,7 @@ _print_ascii_sidebar:
     mov rdx, 1
     syscall 
 
+    pop rbx
     pop rcx
     pop rsi
 
@@ -471,21 +470,17 @@ _convert_digit_to_hexChar:
     retn 8h
 
 _replace:
-    enter 0, 0
-
-    push rsi
     push rcx
 
-    mov rsi, [rbp + 10h]
     mov rcx, 16
 
     _replace_loop:
         mov al, byte[rsi]
 
-        cmp al, byte[rbp + 18h]
+        cmp al, bh
         jne skip_replace
 
-        mov al, byte[rbp + 20h]
+        mov al, bl
         mov byte [rsi], al
 
 
@@ -498,11 +493,8 @@ _replace:
     mov rax, rsi
 
     pop rcx
-    pop rsi
 
-    leave
-
-    retn 18h
+    ret
     
     
 
