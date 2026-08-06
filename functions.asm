@@ -136,35 +136,12 @@ _write_file_hex:
         push rdx
         call _print_hex_block
 
-        ; Write text
-        push rsi
+        mov rcx, 16
         push rcx
-
-        mov rax, 46
-        push rax
-        mov rax, 10
+        mov rax, [rbp + 28h]
         push rax
         push rsi
-        call _replace
-
-        mov rsi, rax
-        mov rax, SYS_WRITE
-        mov rdi, STDOUT
-        mov rdx, 16
-        syscall
-
-        pop rcx
-        pop rsi
-
-        push rsi
-
-        mov rax, SYS_WRITE
-        mov rdi, STDOUT
-        mov rsi, [rbp + 28h]
-        mov rdx, 1
-        syscall 
-
-        pop rsi
+        call _print_ascii_sidebar
         
         inc r10
 
@@ -197,32 +174,11 @@ _write_file_hex:
     push rdx
     call _print_hex_block
 
-    ; Write text
-    push rsi
     push rcx
-
-    mov rax, 46
-    push rax
-    mov rax, 10
+    mov rax, [rbp + 28h]
     push rax
     push rsi
-    call _replace
-
-    mov rsi, rax
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rdx, rcx
-    syscall
-
-    pop rcx
-    pop rsi
-
-    ; New line
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, [rbp + 28h]
-    mov rdx, 1
-    syscall
+    call _print_ascii_sidebar
 
 
     _stop_writing:
@@ -394,6 +350,40 @@ _print_hex_block: ;
 
     retn 20h
 
+
+_print_ascii_sidebar:
+    enter 0, 0
+    push rsi
+    push rcx
+
+    ; Write text
+    mov rax, 46
+    push rax
+    mov rax, 10
+    push rax
+    mov rsi, [rbp + 10h]
+    push rsi
+    call _replace
+
+    mov rsi, rax
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rdx, [rbp + 20h]
+    syscall
+
+    ; New line
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    mov rsi, [rbp + 18h]
+    mov rdx, 1
+    syscall 
+
+    pop rcx
+    pop rsi
+
+    leave
+
+    retn 10h
 
 _close_file:
     enter 0, 0
