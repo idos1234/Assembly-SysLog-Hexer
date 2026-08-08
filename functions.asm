@@ -368,16 +368,10 @@ _print_decimal_as_hex:
     push rsi
     push rdi
 
-    mov rax, [rbp + 20h]
-    push rax
-    mov rsi, [rbp + 18h]
-    push rsi
-    mov rax, [rbp + 10h]
-    push rax
+    mov r8, [rbp + 20h]     ; Minimum length of the hex to print
+    mov rsi, [rbp + 18h]    ; Buffer to write the hex in
+    mov rax, [rbp + 10h]    ; Decimal number to convert
     call _convert_decimal_to_hex
-
-    add rsi, 8
-    sub rsi, rcx
 
     mov rax, SYS_WRITE
     mov rdi, STDOUT
@@ -398,16 +392,10 @@ _print_decimal_as_hex:
 
 
 _convert_decimal_to_hex:
-    enter 0, 0
-
     push rbx
     push rdx
-    push rsi
 
-    ; Get the number
-    mov rsi, [rbp + 18h] ; Buffer to write the hex in
     add rsi, 7
-    mov rax, [rbp + 10h]
     mov rbx, 10h
     mov rcx, 0
 
@@ -424,17 +412,15 @@ _convert_decimal_to_hex:
         
         dec rsi
         inc rcx
-        cmp rcx, [rbp + 20h] ; Compare with the min lenght of the hex
+        cmp rcx, r8 ; Compare with the min lenght of the hex
         jb _convert_decimal_to_hex_loop
 
+    add rsi, 1  ; Move the pointer to the first char of the hex
 
-    pop rsi
     pop rdx
     pop rbx
 
-    leave
-
-    retn 18h
+    ret
 
 _convert_digit_to_hexChar:
     cmp rax, 9
