@@ -179,13 +179,10 @@ _print_line_offset:
     push rcx
     
     ; Print Address
-    mov rdx, 8
-    push rdx
-    mov rdx, [rbp + 18h]
-    push rdx
+    mov r8, 8   ; Minimum length of the hex to print
+    mov rdi, [rbp + 18h]    ; Buffer to write the hex in
     mov rax, [rbp + 20h]
     shl rax, 4 ; Mul by 16
-    push rax
     call _print_decimal_as_hex
 
     ;':' + Space
@@ -233,11 +230,8 @@ _print_hex_block: ;
         xor rax, rax
         mov al, byte [rsi]    ; Get the first char each time
 
-        mov rdx, 2
-        push rdx
-        mov rdx, [rbp + 18h]
-        push rdx
-        push rax
+        mov r8, 2   ; Minimum length of the hex to print
+        mov rdi, [rbp + 18h]    ; Buffer to write the hex in
         call _print_decimal_as_hex
 
         add rsi, 1
@@ -360,20 +354,16 @@ _close_file:
     ret
 
 _print_decimal_as_hex:
-    enter 0, 0
-
     push rbx
     push rcx
     push rdx
     push rsi
     push rdi
 
-    mov r8, [rbp + 20h]     ; Minimum length of the hex to print
-    mov rsi, [rbp + 18h]    ; Buffer to write the hex in
-    mov rax, [rbp + 10h]    ; Decimal number to convert
     call _convert_decimal_to_hex
 
     mov rax, SYS_WRITE
+    mov rsi, rdi
     mov rdi, STDOUT
     mov rdx, rcx
     syscall 
@@ -385,9 +375,7 @@ _print_decimal_as_hex:
     pop rcx
     pop rbx
 
-    leave
-
-    retn 18h
+    ret
 
 
 
@@ -395,7 +383,7 @@ _convert_decimal_to_hex:
     push rbx
     push rdx
 
-    add rsi, 7
+    add rdi, 7
     mov rbx, 10h
     mov rcx, 0
 
@@ -407,15 +395,15 @@ _convert_decimal_to_hex:
         mov rax, rdx
         call _convert_digit_to_hexChar
 
-        mov byte [rsi], al
+        mov byte [rdi], al
         pop rax
         
-        dec rsi
+        dec rdi
         inc rcx
         cmp rcx, r8 ; Compare with the min lenght of the hex
         jb _convert_decimal_to_hex_loop
 
-    add rsi, 1  ; Move the pointer to the first char of the hex
+    add rdi, 1  ; Move the pointer to the first char of the hex
 
     pop rdx
     pop rbx
