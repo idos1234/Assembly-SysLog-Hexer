@@ -106,12 +106,8 @@ _write_file_hex:
         push rdx
         call _print_line_offset
 
-        push rcx
-        push rsi
-        mov rdx, [rbp + 20h]
-        push rdx
-        mov rdx, [rbp + 30h]
-        push rdx
+        mov rdi, [rbp + 20h]    ; Buffer to write the hex in
+        mov r11, [rbp + 30h]
         call _print_hex_block
 
         mov rdx, 16
@@ -140,12 +136,7 @@ _write_file_hex:
     push rdx
     call _print_line_offset
     
-    push rcx
-    push rsi
-    mov rdx, [rbp + 20h]
-    push rdx
-    mov rdx, [rbp + 30h]
-    push rdx
+    mov rdi, [rbp + 20h]
     call _print_hex_block
 
     mov rdx, rcx
@@ -207,18 +198,15 @@ _print_line_offset:
     retn 18h
 
 
-_print_hex_block: ;
-    enter 0, 0
-    
+_print_hex_block:
     push rsi
     push rcx
     push rdx
     push rbx
     push r8
+    push r9
 
-
-    mov rsi, [rbp + 20h]    ; Pointer to the buffer containing the text
-    mov rcx, [rbp + 28h]    ; How many bytes actually read
+    mov r9, rcx    ; How many bytes to print
 
 
     _write_line:
@@ -226,12 +214,11 @@ _print_hex_block: ;
         mov al, byte [rsi]    ; Get the first char each time
 
         mov r8, 2   ; Minimum length of the hex to print
-        mov rdi, [rbp + 18h]    ; Buffer to write the hex in
         call _print_decimal_as_hex
 
         add rsi, 1
 
-        mov rax, [rbp + 28h]
+        mov rax, r9
         sub rax, rcx
         xor rdx, rdx
         mov r8, 2
@@ -243,13 +230,20 @@ _print_hex_block: ;
         _write_space_1:
         push rsi
         push rcx
+        push rdi
+
+        mov rsi, 32
+        push rsi
 
         mov rax, SYS_WRITE
         mov rdi, STDOUT
-        mov rsi, [rbp + 10h]
+        mov rsi, rsp
         mov rdx, 1
         syscall
 
+        pop rsi
+
+        pop rdi
         pop rcx
         pop rsi
 
@@ -261,7 +255,7 @@ _print_hex_block: ;
 
     ; The formula
     mov rax, 16
-    sub rax, [rbp + 28h]
+    sub rax, r9
     mov rbx, rax
     shr rax, 1  ; / 2
     shl rbx, 1  ; * 2
@@ -270,7 +264,7 @@ _print_hex_block: ;
 
     ; Check odd or even
     push rax
-    mov rax, [rbp + 28h]
+    mov rax, r9
     mov rbx, 2
     div rbx
     pop rax
@@ -283,13 +277,20 @@ _print_hex_block: ;
         push rsi
         push rcx
         push rax
+        push rdi
+
+        mov rsi, 32
+        push rsi
 
         mov rax, SYS_WRITE
         mov rdi, STDOUT
-        mov rsi, [rbp + 10h]
+        mov rsi, rsp
         mov rdx, 1
         syscall
 
+        pop rsi
+
+        pop rdi
         pop rax
         pop rcx
         pop rsi
@@ -298,15 +299,14 @@ _print_hex_block: ;
         cmp rcx, rax
         jb _space_looper
 
+    pop r9
     pop r8
     pop rbx
     pop rdx
     pop rcx
     pop rsi
 
-    leave
-
-    retn 20h
+    ret
 
 
 _print_ascii_sidebar:
