@@ -99,15 +99,11 @@ _write_file_hex:
     _writing_loop:
         mov rcx, 16
 
-        push r10
-        mov rdx, [rbp + 20h]
-        push rdx
-        mov rdx, [rbp + 30h]
-        push rdx
+        mov rax, r10    ; Push the line offset
+        mov rdi, [rbp + 20h]    ; Buffer to write the hex in
         call _print_line_offset
 
         mov rdi, [rbp + 20h]    ; Buffer to write the hex in
-        mov r11, [rbp + 30h]
         call _print_hex_block
 
         mov rdx, 16
@@ -129,11 +125,8 @@ _write_file_hex:
     last_line_section:  
     mov rcx, rbx
 
-    push r10
-    mov rdx, [rbp + 20h]
-    push rdx
-    mov rdx, [rbp + 30h]
-    push rdx
+    mov rax, r10
+    mov rdi, [rbp + 20h]
     call _print_line_offset
     
     mov rdi, [rbp + 20h]
@@ -158,16 +151,12 @@ _write_file_hex:
 
 
 _print_line_offset:
-    enter 0, 0
-
     push rdx
     push rsi
     push rcx
     
     ; Print Address
     mov r8, 8   ; Minimum length of the hex to print
-    mov rdi, [rbp + 18h]    ; Buffer to write the hex in
-    mov rax, [rbp + 20h]
     shl rax, 4 ; Mul by 16
     call _print_decimal_as_hex
 
@@ -183,19 +172,22 @@ _print_line_offset:
 
     pop rsi
 
+    mov rsi, ' '
+    push rsi
+
     mov rax, SYS_WRITE
     mov rdi, STDOUT
-    mov rsi, [rbp + 10h]
+    mov rsi, rsp
     mov rdx, 1
     syscall
+
+    pop rsi
 
     pop rcx
     pop rsi
     pop rdx
 
-    leave
-
-    retn 18h
+    ret
 
 
 _print_hex_block:
@@ -232,7 +224,7 @@ _print_hex_block:
         push rcx
         push rdi
 
-        mov rsi, 32
+        mov rsi, ' '
         push rsi
 
         mov rax, SYS_WRITE
