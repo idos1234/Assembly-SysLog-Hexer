@@ -114,11 +114,8 @@ _write_file_hex:
         push rdx
         call _print_hex_block
 
-        mov rcx, 16
-        push rcx
+        mov rdx, 16
         mov rax, [rbp + 28h]
-        push rax
-        push rsi
         call _print_ascii_sidebar
         
         inc r10
@@ -151,10 +148,8 @@ _write_file_hex:
     push rdx
     call _print_hex_block
 
-    push rcx
+    mov rdx, rcx
     mov rax, [rbp + 28h]
-    push rax
-    push rsi
     call _print_ascii_sidebar
 
 
@@ -315,37 +310,34 @@ _print_hex_block: ;
 
 
 _print_ascii_sidebar:
-    enter 0, 0
     push rsi
-    push rcx
     push rbx
 
     ; Write text
     mov bh, 10  ;from
     mov bl, 46  ;to
-    mov rsi, [rbp + 10h]    ;text buffer
     call _replace
 
+    push rax
+
+    mov rsi, rdi
+    mov rax, SYS_WRITE
+    mov rdi, STDOUT
+    syscall
+
+    pop rax
+
+    ; New line
     mov rsi, rax
     mov rax, SYS_WRITE
     mov rdi, STDOUT
-    mov rdx, [rbp + 20h]
-    syscall
-
-    ; New line
-    mov rax, SYS_WRITE
-    mov rdi, STDOUT
-    mov rsi, [rbp + 18h]
     mov rdx, 1
     syscall 
 
     pop rbx
-    pop rcx
     pop rsi
 
-    leave
-
-    retn 18h
+    ret
 
 _close_file:
     mov rax, SYS_CLOSE
@@ -426,6 +418,7 @@ _convert_digit_to_hexChar:
     ret
 
 _replace:
+    push rax
     push rcx
 
     mov rcx, 16
@@ -446,9 +439,10 @@ _replace:
 
     sub rsi, 16
 
-    mov rax, rsi
+    mov rdi, rsi
 
     pop rcx
+    pop rax
 
     ret
     
