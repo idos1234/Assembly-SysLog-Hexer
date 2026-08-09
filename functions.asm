@@ -24,15 +24,12 @@ _open_file:
 
 
 _read_and_write:
-    enter 0, 0
-
     push rbx
     push rdx
 
     xor rdx, rdx
     _read_and_write_loop:
-        mov rdi, [rbp + 18h]    ; file descriptor
-        mov rsi, [rbp + 10h]    ; buffer to store the file
+        mov rdi, r8    ; file descriptor
         call _read_file
 
         cmp rax, 0
@@ -40,9 +37,8 @@ _read_and_write:
 
         mov r10, rdx    ; How many bytes already read - for the address
         shr r10, 4        ; Divide by 16 to get the address
-        mov rdi, [rbp + 20h]    ; address of the hex_text buffer
+        mov rdi, r9    ; address of the hex_text buffer
         mov rbx, rax    ; How many bytes actually read
-        mov rsi, [rbp + 10h]    ; Pointer to the buffer containing the text
         call _write_file_hex
 
         cmp rax, 0
@@ -54,9 +50,7 @@ _read_and_write:
     pop rdx
     pop rbx
 
-    leave
-
-    retn 30h
+    ret
 
 _read_file:
     push rdx
@@ -76,6 +70,7 @@ _write_file_hex:
     push rdx
     push rbx
     push r10
+    push r8
 
 
     cmp rbx, 16
@@ -118,6 +113,7 @@ _write_file_hex:
 
 
     _stop_writing:
+    pop r8
     pop r10
     pop rbx
     pop rdx

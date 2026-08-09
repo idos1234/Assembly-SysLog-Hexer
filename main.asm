@@ -19,18 +19,14 @@ _start:
     mov rdi, filename   ; address of the filename
     call _open_file
 
-    mov [file_desc], rax
+    mov [file_desc], rax    ; store the file descriptor
 
     cmp rax, 0
     jl call_exit
 
-    push space
-    push newline
-    push hex_text
-    push rax
-    mov rax, buffer
-    push rax
-
+    mov r9, hex_text    ; address of the hex_text buffer
+    mov r8, [file_desc]    ; file descriptor
+    mov rsi, buffer     ; Buffer to store the file
     call _read_and_write
 
     cmp rax, 0
