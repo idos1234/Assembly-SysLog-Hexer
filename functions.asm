@@ -38,20 +38,11 @@ _read_and_write:
         cmp rax, 0
         jle _stop_reading_writing
 
-        mov rbx, rdx    ; How many bytes already read - for the address
-        shr rbx, 4        ; Divide by 16 to get the address
-        push rbx
-        add rdx, rax
-        mov rbx, [rbp + 30h]    ; address of the space buffer
-        push rbx
-        mov rbx, [rbp + 28h]    ; address of the newline buffer
-        push rbx
-        mov rbx, [rbp + 20h]    ; address of the hex_text buffer
-        push rbx
-        push rax
-        mov rax, [rbp + 10h]
-        push rax
-
+        mov r10, rdx    ; How many bytes already read - for the address
+        shr r10, 4        ; Divide by 16 to get the address
+        mov rdi, [rbp + 20h]    ; address of the hex_text buffer
+        mov rbx, rax    ; How many bytes actually read
+        mov rsi, [rbp + 10h]    ; Pointer to the buffer containing the text
         call _write_file_hex
 
         cmp rax, 0
@@ -79,8 +70,6 @@ _read_file:
     ret
 
 _write_file_hex:
-    enter 0, 0
-
     push rdi
     push rsi
     push rcx
@@ -88,26 +77,20 @@ _write_file_hex:
     push rbx
     push r10
 
-    mov rbx, [rbp + 18h]    ; How many bytes actually read
-    mov rsi, [rbp + 10h]    ; Pointer to the buffer containing the text
 
     cmp rbx, 16
     jbe last_line_section
 
-    mov r10, [rbp + 38h]    ; How many bytes already read - for the address
 
     _writing_loop:
         mov rcx, 16
 
         mov rax, r10    ; Push the line offset
-        mov rdi, [rbp + 20h]    ; Buffer to write the hex in
         call _print_line_offset
 
-        mov rdi, [rbp + 20h]    ; Buffer to write the hex in
         call _print_hex_block
 
         mov rdx, 16
-        mov rax, [rbp + 28h]
         call _print_ascii_sidebar
         
         inc r10
@@ -126,14 +109,11 @@ _write_file_hex:
     mov rcx, rbx
 
     mov rax, r10
-    mov rdi, [rbp + 20h]
     call _print_line_offset
     
-    mov rdi, [rbp + 20h]
     call _print_hex_block
 
     mov rdx, rcx
-    mov rax, [rbp + 28h]
     call _print_ascii_sidebar
 
 
@@ -145,15 +125,14 @@ _write_file_hex:
     pop rsi
     pop rdi
 
-    leave
-
-    retn 30h
+    ret
 
 
 _print_line_offset:
     push rdx
     push rsi
     push rcx
+    push rdi
     
     ; Print Address
     mov r8, 8   ; Minimum length of the hex to print
@@ -183,6 +162,7 @@ _print_line_offset:
 
     pop rsi
 
+    pop rdi
     pop rcx
     pop rsi
     pop rdx
@@ -197,6 +177,7 @@ _print_hex_block:
     push rbx
     push r8
     push r9
+    push rdi
 
     mov r9, rcx    ; How many bytes to print
 
@@ -291,6 +272,7 @@ _print_hex_block:
         cmp rcx, rax
         jb _space_looper
 
+    pop rdi
     pop r9
     pop r8
     pop rbx
@@ -304,28 +286,32 @@ _print_hex_block:
 _print_ascii_sidebar:
     push rsi
     push rbx
+    push rdi
 
     ; Write text
     mov bh, 10  ;from
     mov bl, 46  ;to
     call _replace
 
-    push rax
 
     mov rsi, rdi
     mov rax, SYS_WRITE
     mov rdi, STDOUT
     syscall
 
-    pop rax
-
     ; New line
-    mov rsi, rax
+    mov rsi, 10
+    push rsi
+
     mov rax, SYS_WRITE
     mov rdi, STDOUT
+    mov rsi, rsp
     mov rdx, 1
     syscall 
 
+    pop rsi
+
+    pop rdi
     pop rbx
     pop rsi
 
