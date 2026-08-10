@@ -32,7 +32,7 @@ _start:
     cmp rax, 0
     jl call_exit
 
-    mov rdi, file_desc  ; address of the filename    
+    mov rdi, [file_desc]  ; address of the filename    
     call _close_file
 
 
