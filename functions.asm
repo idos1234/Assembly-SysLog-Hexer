@@ -8,6 +8,15 @@
 
 %define BUFFER_SIZE 1024
 
+; =================================================================
+; Function: _open_file
+; Description: Opens a specified file in read-only mode.
+; Inputs:
+;   - RDI: Pointer to the null-terminated filename string
+; Outputs:
+;   - RAX: File descriptor (positive) or error code (negative)
+; Clobbered: RAX, RCX, R11 (syscall)
+; =================================================================
 _open_file:
     push rsi
     push rdx
@@ -23,6 +32,18 @@ _open_file:
     ret
 
 
+; =================================================================
+; Function: _read_and_write
+; Description: Main loop that reads chunks of the file and formats 
+;              them into hex dump output until EOF is reached.
+; Inputs:
+;   - R8:  File descriptor of the open file
+;   - R9:  Pointer to the hex_text buffer
+;   - RSI: Pointer to the primary read buffer
+; Outputs:
+;   - RAX: Status code
+; Clobbered: RAX, RDI, RBX, R10
+; =================================================================
 _read_and_write:
     push rbx
     push rdx
@@ -56,6 +77,16 @@ _read_and_write:
 
     ret
 
+; =================================================================
+; Function: _read_file
+; Description: Reads a block of data from an open file descriptor.
+; Inputs:
+;   - RDI: File descriptor
+;   - RSI: Pointer to the destination buffer (will be source buffer in the writing function)
+; Outputs:
+;   - RAX: Number of bytes successfully read (0 = EOF)
+; Clobbered: RAX, RCX, R11 (syscall)
+; =================================================================
 _read_file:
     push rdx
 
@@ -67,6 +98,18 @@ _read_file:
 
     ret
 
+; =================================================================
+; Function: _write_file_hex
+; Description: Converts a block of bytes into a formatted hex dump and writes it to STDOUT
+; Inputs:
+;   - RSI: Pointer to the source data buffer
+;   - RDI: Pointer to the hex_text buffer
+;   - RBX: Number of bytes to process
+;   - R10: Current line offset (for address printing)
+; Outputs:
+;   - STDOUT: Formatted hex dump output
+; Clobbered: RAX
+; =================================================================
 _write_file_hex:
     push rdi
     push rsi
@@ -128,6 +171,16 @@ _write_file_hex:
     ret
 
 
+; =================================================================
+; Function: _print_line_offset
+; Description: Prints the 8-character hexadecimal line address 
+;              followed by a colon and a space (e.g., "00000010: ").
+; Inputs:
+;   - RAX: Line offset index
+; Outputs:
+;   - STDOUT: Formatted offset string
+; Clobbered: RAX, RCX, R11 (syscall)
+; =================================================================
 _print_line_offset:
     push rdx
     push rsi
@@ -170,6 +223,17 @@ _print_line_offset:
     ret
 
 
+; =================================================================
+; Function: _print_hex_block
+; Description: Prints the hex values of bytes with proper spacing. 
+;              Pads with spaces if the line has less than 16 bytes.
+; Inputs:
+;   - RSI: Pointer to the current byte in the buffer
+;   - RCX: Number of bytes to print on this line
+; Outputs:
+;   - STDOUT: Hexadecimal string representation
+; Clobbered: RAX, RCX, RDX
+; =================================================================
 _print_hex_block:
     push rsi
     push rcx
@@ -283,6 +347,18 @@ _print_hex_block:
     ret
 
 
+
+; =================================================================
+; Function: _print_ascii_sidebar
+; Description: Prints the ASCII representation of the hex block. 
+;              Sanitizes control characters by replacing them.
+; Inputs:
+;   - RSI: Pointer to the ASCII string buffer
+;   - RDX: Number of bytes to process and print
+; Outputs:
+;   - STDOUT: ASCII text followed by a newline
+; Clobbered: RAX, RCX, R11 (syscall)
+; =================================================================
 _print_ascii_sidebar:
     push rsi
     push rbx
@@ -317,12 +393,32 @@ _print_ascii_sidebar:
 
     ret
 
+; =================================================================
+; Function: _close_file
+; Description: Closes an open file descriptor.
+; Inputs:
+;   - RDI: File descriptor to close
+; Outputs:
+;   - RAX: Status code (0 on success)
+; Clobbered: RAX, RCX, R11 (syscall)
+; =================================================================
 _close_file:
     mov rax, SYS_CLOSE
     syscall
 
     ret
 
+; =================================================================
+; Function: _print_decimal_as_hex
+; Description: Converts a decimal number to hex string and prints it.
+; Inputs:
+;   - RAX: Value to convert and print
+;   - R8:  Minimum character length (padded with zeros)
+;   - RDI: Pointer to destination hex string buffer
+; Outputs:
+;   - STDOUT: Prints the hex string
+; Clobbered: RAX, RCX, R11 (syscall)
+; =================================================================
 _print_decimal_as_hex:
     push rbx
     push rcx
@@ -349,6 +445,17 @@ _print_decimal_as_hex:
 
 
 
+; =================================================================
+; Function: _convert_decimal_to_hex
+; Description: Implements the base-10 to base-16 conversion algorithm.
+; Inputs:
+;   - RAX: Decimal value
+;   - RDI: Pointer to target hex string buffer
+;   - R8:  Minimum length of hex string
+; Outputs:
+;   - RCX: Total characters written
+; Clobbered: RAX, RDI
+; =================================================================
 _convert_decimal_to_hex:
     push rbx
     push rdx
@@ -380,6 +487,15 @@ _convert_decimal_to_hex:
 
     ret
 
+; =================================================================
+; Function: _convert_digit_to_hexChar
+; Description: Converts a numeric nibble (0-15) to its ASCII equivalent.
+; Inputs:
+;   - RAX: Numeric value (0-15)
+; Outputs:
+;   - RAX: ASCII character ('0'-'9' or 'a'-'f')
+; Clobbered: RAX
+; =================================================================
 _convert_digit_to_hexChar:
     cmp rax, 9
     jbe _is_digit
@@ -395,6 +511,17 @@ _convert_digit_to_hexChar:
 
     ret
 
+; =================================================================
+; Function: _replace
+; Description: Scans a 16-byte block and replaces specific characters.
+; Inputs:
+;   - RSI: Pointer to text buffer
+;   - BH:  Character to target
+;   - BL:  Replacement character
+; Outputs:
+;   - RDI: Rewound pointer to start of modified block
+; Clobbered: RAX, RCX, RSI
+; =================================================================
 _replace:
     push rax
     push rcx
@@ -426,6 +553,15 @@ _replace:
     
     
 
+; =================================================================
+; Function: _exit
+; Description: Gracefully terminates the application.
+; Inputs:
+;   - RDI: Exit code
+; Outputs:
+;   - Terminated process
+; Clobbered: RAX, RCX, R11 (syscall)
+; =================================================================
 _exit:
     mov rax, SYS_EXIT
     syscall
