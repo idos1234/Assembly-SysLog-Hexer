@@ -37,9 +37,13 @@ _read_and_write:
 
         mov r10, rdx    ; How many bytes already read - for the address
         shr r10, 4        ; Divide by 16 to get the address
+        
+        add rdx, rax    ; Update the total bytes read
+
         mov rdi, r9    ; address of the hex_text buffer
         mov rbx, rax    ; How many bytes actually read
         call _write_file_hex
+
 
         cmp rax, 0
         jle _stop_reading_writing
