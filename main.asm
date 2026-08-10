@@ -3,7 +3,6 @@
 default rel
 
 SECTION .data
-    filename db "file.txt", 0
     newline db 10, 0
     space db 32, 0
 
@@ -16,8 +15,17 @@ SECTION .text
     GLOBAL _start
 
 _start:
-    mov rdi, filename   ; address of the filename
+    ; Check if the user provided an argument (argc >= 2)
+    mov rax, [rsp]          ; rax = argc (number of arguments)
+    cmp rax, 2
+    jl .missing_argument    ; If no argument is provided, jump to error handling
+
+    ; Retrieve argv[1] (pointer to the filename string)
+    mov rdi, [rsp + 16]     ; rdi now holds the address of the filename from the terminal
+
+    ; 3. Since RDI already contains the address, we can directly call the file opening function!
     call _open_file
+
 
     mov [file_desc], rax    ; store the file descriptor
 
@@ -41,6 +49,10 @@ _start:
     
     mov rax, 0
 
+
+.missing_argument:
+    mov rax, 1          ; Set return value to 1 (error)
+    jmp call_exit
 
 call_exit:
     mov rdi, rax    ; return value
