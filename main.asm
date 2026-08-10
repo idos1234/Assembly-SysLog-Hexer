@@ -23,7 +23,7 @@ _start:
     ; Retrieve argv[1] (pointer to the filename string)
     mov rdi, [rsp + 16]     ; rdi now holds the address of the filename from the terminal
 
-    ; 3. Since RDI already contains the address, we can directly call the file opening function!
+    ; Since RDI already contains the address, we can directly call the file opening function!
     call _open_file
 
 
