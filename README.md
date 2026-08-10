@@ -52,7 +52,7 @@ To build and run this utility, you need a 64-bit Linux environment equipped with
    ```
 5. **Run the utility:**
    ```bash
-   ./main
+   ./main [your file]
 
    ```
 ## 🏛️ Architecture & Internal API
